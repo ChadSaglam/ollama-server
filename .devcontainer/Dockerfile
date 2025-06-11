@@ -4,10 +4,22 @@ RUN apt-get update && \
     apt-get install -y \
     curl \
     python3-pip \
+    screen \ 
     && rm -rf /var/lib/apt/lists/*
 
-# Ollama kurulumu için boş bir script oluştur (setup.sh'de dolduracağız)
-RUN touch /tmp/install_ollama.sh && \
-    chmod +x /tmp/install_ollama.sh
+# Ollama setup
+RUN curl -fsSL https://ollama.com/install.sh | sh
 
 WORKDIR /workspace
+
+# Python dependencies
+RUN pip install fastapi uvicorn requests
+
+# Model download (quantized version)
+RUN ollama pull mistral:7b-instruct-q4_K_M &
+
+COPY api /workspace/api
+COPY .devcontainer/setup.sh /tmp/setup.sh
+RUN chmod +x /tmp/setup.sh
+
+CMD ["/tmp/setup.sh"]

@@ -1,8 +1,16 @@
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 import requests
-import os
 
 app = FastAPI(title="Ollama ADHD Task API")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 OLLAMA_URL = "http://localhost:11434/api/generate"
 
