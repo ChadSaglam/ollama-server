@@ -1,5 +1,6 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Body
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 import requests
 
 app = FastAPI(title="Ollama ADHD Task API")
@@ -14,12 +15,17 @@ app.add_middleware(
 
 OLLAMA_URL = "http://localhost:11434/api/generate"
 
+# Request modeli tanımla
+class TaskRequest(BaseModel):
+    title: str
+    description: str
+
 @app.post("/analyze-task")
-async def analyze_task(title: str, description: str):
+async def analyze_task(request: TaskRequest = Body(...)):
     prompt = f"""
     [INST] Task Analysis Request:
-    Title: {title}
-    Description: {description}
+    Title: {request.title}
+    Description: {request.description}
     
     Please return JSON with:
     - priority (low/medium/high)
