@@ -39,7 +39,7 @@ async def analyze_task(request: TaskRequest = Body(...)):
         response = requests.post(
             OLLAMA_URL,
             json={
-                "model": "mistral:7b-instruct-q4_K_M",
+                "model": "deepseek-r1:1.5b",
                 "prompt": prompt,
                 "format": "json",
                 "stream": False
