@@ -2,6 +2,7 @@ from fastapi import FastAPI, HTTPException, Body
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import requests
+import json
 
 app = FastAPI(title="Ollama ADHD Task API")
 
@@ -26,30 +27,44 @@ async def analyze_task(request: TaskRequest = Body(...)):
     [INST] Task Analysis Request:
     Title: {request.title}
     Description: {request.description}
-    
+
     Please return JSON with:
     - priority (low/medium/high)
     - energyLevel (low/medium/high)
     - estimatedTimeMinutes (integer)
-    - subtasks (array)
+    - subtasks (array of strings)
+
+    Example format:
+    {{
+      "priority": "high",
+      "energyLevel": "medium",
+      "estimatedTimeMinutes": 25,
+      "subtasks": ["...", "..."]
+    }}
     [/INST]
     """
-    
+
     try:
         response = requests.post(
             OLLAMA_URL,
             json={
-                "model": "deepseek-r1:1.5b",
+                "model": request.model,
                 "prompt": prompt,
-                "format": "json",
                 "stream": False
             },
             timeout=30
         )
-        return response.json()
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        data = response.json()
 
+        try:
+            parsed = json.loads(data["response"])
+            return parsed
+        except json.JSONDecodeError:
+            raise HTTPException(status_code=500, detail=f"Model returned invalid JSON: {data['response']}")
+
+    except requests.RequestException as e:
+        raise HTTPException(status_code=500, detail=f"Ollama API error: {str(e)}")
+    
 @app.get("/health")
 async def health_check():
     return {"status": "healthy", "model": "mistral:7b-instruct"}
