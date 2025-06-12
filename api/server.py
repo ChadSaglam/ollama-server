@@ -1,10 +1,12 @@
 from fastapi import FastAPI, HTTPException, Body
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+from typing import Optional
 import requests
 import json
+import time
 
-app = FastAPI(title="Ollama ADHD Task API")
+app = FastAPI(title="Ollama API")
 
 app.add_middleware(
     CORSMiddleware,
@@ -16,16 +18,17 @@ app.add_middleware(
 
 OLLAMA_URL = "http://localhost:11434/api/generate"
 
-# Request modeli tanımla
 class TaskRequest(BaseModel):
     title: str
     description: str
+    model: Optional[str] = "qwen2.5:3b"
 
 class PromptRequest(BaseModel):
     prompt: str
     model: str = "qwen2.5:3b"
     stream: bool = False
 
+@app.post("/generate")
 async def generate_text(request: PromptRequest = Body(...)):
     """
     General-purpose endpoint for sending prompts to Ollama models.
@@ -58,26 +61,41 @@ async def generate_text(request: PromptRequest = Body(...)):
 @app.post("/analyze-task")
 async def analyze_task(request: TaskRequest = Body(...)):
     prompt = f"""
-    [INST] Task Analysis Request:
-    Title: {request.title}
-    Description: {request.description}
-
-    Please return JSON with:
+    You are an AI assistant helping someone with ADHD organize tasks efficiently.
+ 
+    Return ONLY a valid JSON object with:
     - priority (low/medium/high)
     - energyLevel (low/medium/high)
     - estimatedTimeMinutes (integer)
     - subtasks (array of strings)
-
+ 
+    DO NOT include any markdown formatting, explanations, or extra text before or after the JSON.
+ 
+    Your task breakdown should be as detailed as possible. Aim for at least 5–7 clear, actionable subtasks.
+ 
     Example format:
     {{
-      "priority": "high",
-      "energyLevel": "medium",
-      "estimatedTimeMinutes": 25,
-      "subtasks": ["...", "..."]
+        "priority": "medium",
+        "energyLevel": "medium",
+        "estimatedTimeMinutes": 45,
+        "subtasks": [
+            "Subtask 1 description",
+            "Subtask 2 description",
+            "Subtask 3 description",
+            "Subtask 4 description",
+            "Subtask 5 description"
+        ]
     }}
-    [/INST]
+ 
+    Now analyze this task:
+    Title: {request.title}
+    Description: {request.description}
+ 
+    JSON output:
     """
-
+ 
+    start_time = time.time()
+ 
     try:
         response = requests.post(
             OLLAMA_URL,
@@ -86,19 +104,40 @@ async def analyze_task(request: TaskRequest = Body(...)):
                 "prompt": prompt,
                 "stream": False
             },
-            timeout=30
+            timeout=60
         )
+        inference_time = time.time() - start_time
+ 
         data = response.json()
-
+ 
         try:
             parsed = json.loads(data["response"])
-            return parsed
+            return {
+                "inference_time_seconds": round(inference_time, 2),
+                "result": parsed
+            }
         except json.JSONDecodeError:
             raise HTTPException(status_code=500, detail=f"Model returned invalid JSON: {data['response']}")
-
+ 
     except requests.RequestException as e:
         raise HTTPException(status_code=500, detail=f"Ollama API error: {str(e)}")
-    
+ 
 @app.get("/health")
 async def health_check():
-    return {"status": "healthy", "model": "mistral:7b-instruct"}
+    return {"status": "healthy", "model": "qwen2.5:3b"}
+
+@app.get("/model-ready")
+async def model_ready():
+    try:
+        resp = requests.post(
+            "http://localhost:11434/api/generate",
+            json={
+                "model": "qwen2.5:3b",
+                "prompt": "Test",
+                "stream": False
+            },
+            timeout=5
+        )
+        return {"ready": True}
+    except (requests.ConnectionError, requests.Timeout, requests.RequestException):
+        return {"ready": False}
