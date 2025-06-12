@@ -8,7 +8,7 @@
     "ghcr.io/devcontainers/features/git:1": {}
   },
   "forwardPorts": [11434, 8000],
-  "postCreateCommand": "bash .devcontainer/setup.sh",
+  "postCreateCommand": "bash /tmp/setup.sh",
   "customizations": {
     "vscode": {
       "extensions": [
@@ -20,6 +20,5 @@
   "containerEnv": {
     "OLLAMA_HOST": "0.0.0.0"
   },
-  "remoteUser": "vscode",
-  "runArgs": ["--restart=always"]
+  "remoteUser": "vscode"
 }

@@ -14,7 +14,7 @@ COPY api /workspace/api
 RUN pip install fastapi uvicorn requests
 
 # Copy setup script
-COPY .devcontainer/setup.sh /tmp/setup.sh
+COPY setup.sh /tmp/setup.sh
 RUN chmod +x /tmp/setup.sh
 
 # Expose ports
