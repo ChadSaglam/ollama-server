@@ -21,6 +21,40 @@ class TaskRequest(BaseModel):
     title: str
     description: str
 
+class PromptRequest(BaseModel):
+    prompt: str
+    model: str = "qwen2.5:3b"
+    stream: bool = False
+
+async def generate_text(request: PromptRequest = Body(...)):
+    """
+    General-purpose endpoint for sending prompts to Ollama models.
+    Returns raw response from the model.
+    """
+    try:
+        response = requests.post(
+            OLLAMA_URL,
+            json={
+                "model": request.model,
+                "prompt": request.prompt,
+                "stream": request.stream
+            },
+            timeout=60
+        )
+
+        if not response.ok:
+            raise HTTPException(status_code=500, detail=f"Ollama error: {response.text}")
+
+        data = response.json()
+
+        return {
+            "response": data.get("response", ""),
+            "model": data.get("model", "")
+        }
+
+    except requests.RequestException as e:
+        raise HTTPException(status_code=500, detail=f"Connection error: {str(e)}")
+    
 @app.post("/analyze-task")
 async def analyze_task(request: TaskRequest = Body(...)):
     prompt = f"""

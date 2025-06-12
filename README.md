@@ -2,7 +2,7 @@
 
 🚀 Ollama based task analysis API running on **GitHub Codespaces**
 
-## 📌 Özellikler
+## 📌 Features
 - Mistral 7B quantized model
 - FastAPI interface
 - ADHD-friendly task analysis:
@@ -15,7 +15,7 @@
   }
   ```
 
-## 🛠️ Kurulum
+## 🛠️ Setup
 1. Start Codespace
 2. Automatically:
    - Ollama will be installed
@@ -25,7 +25,7 @@
 ## 🌐 API Endpoints
 - `POST /analyze-task`
   ```bash
-  curl -X POST "https://your-codespace-8000.preview.app.github.dev/analyze-task" \
+  curl -X POST "https://fuzzy-couscous-4j76qww6x7x7hq644.github.dev/analyze-task" \
   -H "Content-Type: application/json" \
   -d '{"title": "Doctor's appointment", "description": "I need to call by 10:00 tomorrow"}'
   ```
