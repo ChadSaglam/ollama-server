@@ -2,16 +2,29 @@
 
 set -e
 
+echo "Setting up Ollama and FastAPI..."
+
 # Start Ollama in background
-echo "Starting Ollama..."
+echo "Starting Ollama service..."
 ollama serve &
 
 # Wait for Ollama to initialize
-sleep 5
+echo "Waiting for Ollama to start..."
+sleep 10
 
-# Pull model (optional)
-ollama pull qwen2.5:3b || echo "Model already exists"
+# Check if Ollama is running
+if ! curl -s http://localhost:11434/api/tags > /dev/null; then
+    echo "Ollama failed to start"
+    exit 1
+fi
 
-# Start FastAPI server
-echo "Starting FastAPI server..."
-uvicorn api.server:app --host 0.0.0.0 --port 8000
+echo "Ollama started successfully!"
+
+# Pull model (this might take a while)
+echo "Pulling qwen2.5:3b model..."
+ollama pull qwen2.5:3b || echo "Model pull failed or already exists"
+
+echo "Setup complete!"
+
+# Keep the container running (Codespaces will handle the FastAPI server)
+tail -f /dev/null
